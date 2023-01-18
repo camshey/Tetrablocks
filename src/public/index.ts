@@ -94,9 +94,10 @@ class Piece {
             for(let col = 0 ; col < piece[row].length ; col++) {
                 const cell = piece[row][col]
                 newpiece[col][end - row] = cell;
-                if(cell === '#' && end - row + this.pos.col < 0)
+                while(cell === '#' && end - row + this.pos.col < 0)
                     this.pos.col++;
-                else if(cell === '#' && end - row + this.pos.col > 9)
+                
+                while(cell === '#' && end - row + this.pos.col > 9)
                     this.pos.col--;
             }
         }
@@ -108,11 +109,29 @@ class Piece {
 
 
     }
+    toString()
+    {
+
+        let flat = [];
+        for(let row = 0 ; row < 4 ; row++) {
+            flat.push('      ');
+            for(let col = 0 ; col < 4 ; col++) {
+                flat.push(' ');
+                if(typeof this.cells[row] !== 'undefined' && this.cells[row][col] === '#')
+                    flat.push(this.cells[row][col]);
+                else
+                    flat.push(' ');
+            }
+            flat.push('\n');
+        }
+        return flat.join('');
+    }
 }
 
 class Field {
     cells : CellValue[][];
-    pieceObj! : Piece;
+    piece! : Piece;
+    nextPiece : Piece;
     interval : any;
     deadrows : number;
     noInput : boolean;
@@ -121,27 +140,21 @@ class Field {
     {
         this.cells = newfield();
         this.deadrows = 0;
-        this.newpiece();
+        this.piece = new Piece();
+        this.nextPiece = new Piece();
         this.interval = setInterval(this.tick.bind(this), 250);
         this.noInput = false;
     }
 
-    newpiece()
-    {
-        this.pieceObj = new Piece();
-    }
-
-    
-
 
     outofbounds()
     {
-        const { size, pos } = this.pieceObj;
+        const { size, pos } = this.piece;
         
 
         for(let row = 0 ; row < size ; row++) {
             for(let col = 0 ; col < size ; col++) {
-                if(this.pieceObj.cells[row][col] === '#') {
+                if(this.piece.cells[row][col] === '#') {
                     if(col + pos.col < 0 || col + pos.col > 9) {
                         return true;
                     }
@@ -153,7 +166,7 @@ class Field {
 
     ispiece(row : number, col : number)
     {
-        const { cells, pos } = this.pieceObj;
+        const { cells, pos } = this.piece;
         if(typeof cells[row - pos.row] !== 'undefined' &&
         cells[row - pos.row][col - pos.col] === '#') {
             return true;
@@ -163,7 +176,7 @@ class Field {
 
     collision(testpos : { row: number, col: number })
     {
-        const { size, cells } = this.pieceObj;
+        const { size, cells } = this.piece;
         for(let row = 0 ; row < size ; row++) {
             for(let col = 0 ; col < size ; col++) {
                 if(cells[row][col] === '#') {
@@ -185,13 +198,14 @@ class Field {
 
     draw()
     {
+        let n = this.nextPiece.toString();
         let f = this.toString();
-        document.body.innerHTML = `<pre>${f}</pre>`;
+        document.body.innerHTML = `<pre>${n}</pre><pre>${f}</pre>`;
         console.log("drawing...")
     }
     crystallize()
     {
-        const { size, pos, cells } = this.pieceObj;
+        const { size, pos, cells } = this.piece;
         for(let r = 0 ; r < size ; r++) {
             for(let c = 0 ; c < size ; c++) {
                 if(cells[r][c] === '#') {
@@ -202,7 +216,8 @@ class Field {
                 }
             }
         }
-        this.newpiece();
+        this.piece = this.nextPiece;
+        this.nextPiece = new Piece();
 
         return true;
 
@@ -245,11 +260,11 @@ class Field {
         
         this.removerows();
 
-        let opos = { row: this.pieceObj.pos.row, col: this.pieceObj.pos.col };
+        let opos = { row: this.piece.pos.row, col: this.piece.pos.col };
 
         this.move('down');
 
-        let { pos } = this.pieceObj;
+        let { pos } = this.piece;
 
         if(pos.row === opos.row && pos.col === opos.col) {
             if(!this.noInput) {
@@ -285,15 +300,15 @@ class Field {
     
     move(dir : Dir) 
     {
-        let { row, col } = this.pieceObj.pos;
+        let { row, col } = this.piece.pos;
         row += dirMap[dir].row;
         col += dirMap[dir].col;
     
-        console.log(`move ${dir} : from ${this.pieceObj.pos.row}, ${this.pieceObj.pos.col} to ${row}, ${col}`);
+        console.log(`move ${dir} : from ${this.piece.pos.row}, ${this.piece.pos.col} to ${row}, ${col}`);
         if(!this.collision({row: row, col: col})) {
             console.log("move to", row, col);
-            this.pieceObj.pos.row = row;
-            this.pieceObj.pos.col = col;
+            this.piece.pos.row = row;
+            this.piece.pos.col = col;
         } else {
             console.log("abort move");
         }
@@ -314,7 +329,7 @@ document.body.addEventListener("keydown", (ev) =>
     field.noInput = false;
     if(typeof d !== 'undefined') {
         if(d === 'rotate') {
-            field.pieceObj.rotate();
+            field.piece.rotate();
         } else {
             field.move(d);
         }
