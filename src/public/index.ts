@@ -55,6 +55,12 @@ const pieceTable : CellValue[][][] = [
         [ '.', '#', '#' ],
         [ '#', '#', '.' ],
     ],
+    [
+        [ '.', '#', '.', '.' ],
+        [ '.', '#', '.', '.' ],
+        [ '.', '#', '.', '.' ],
+        [ '.', '#', '.', '.' ],                        
+    ]
 
 
 ]
@@ -75,6 +81,31 @@ class Piece {
         this.pos = { row: -3, col: 3 };
         this.size = this.cells.length;
         this.bottom = this.cells.length - 1;
+
+    }
+
+    rotate()
+    {
+        const piece = this.cells;
+        const newpiece : CellValue[][] = piece.map(() => []);
+        const end = newpiece.length - 1;
+
+        for(let row = 0 ; row < piece.length ; row++ ) {
+            for(let col = 0 ; col < piece[row].length ; col++) {
+                const cell = piece[row][col]
+                newpiece[col][end - row] = cell;
+                if(cell === '#' && end - row + this.pos.col < 0)
+                    this.pos.col++;
+                else if(cell === '#' && end - row + this.pos.col > 9)
+                    this.pos.col--;
+            }
+        }
+        this.cells = newpiece;
+
+        while(field.collision(this.pos)) {
+            this.pos.row--;
+        }
+
 
     }
 }
@@ -100,30 +131,7 @@ class Field {
         this.pieceObj = new Piece();
     }
 
-    rotate()
-    {
-        const piece = this.pieceObj.cells;
-        const newpiece : CellValue[][] = piece.map(() => []);
-        const end = newpiece.length - 1;
-
-        for(let row = 0 ; row < piece.length ; row++ ) {
-            for(let col = 0 ; col < piece[row].length ; col++) {
-                const cell = piece[row][col]
-                newpiece[col][end - row] = cell;
-                if(cell === '#' && end - row + this.pieceObj.pos.col < 0)
-                    this.pieceObj.pos.col++;
-                else if(cell === '#' && end - row + this.pieceObj.pos.col > 9)
-                    this.pieceObj.pos.col--;
-            }
-        }
-        this.pieceObj.cells = newpiece;
-
-        while(this.collision(this.pieceObj.pos)) {
-            this.pieceObj.pos.row--;
-        }
-
-
-    }
+    
 
 
     outofbounds()
@@ -306,7 +314,7 @@ document.body.addEventListener("keydown", (ev) =>
     field.noInput = false;
     if(typeof d !== 'undefined') {
         if(d === 'rotate') {
-            field.rotate();
+            field.pieceObj.rotate();
         } else {
             field.move(d);
         }
