@@ -84,6 +84,7 @@ class Field {
     pieceObj! : Piece;
     interval : any;
     deadrows : number;
+    noInput : boolean;
 
     constructor()
     {
@@ -91,6 +92,7 @@ class Field {
         this.deadrows = 0;
         this.newpiece();
         this.interval = setInterval(this.tick.bind(this), 250);
+        this.noInput = false;
     }
 
     newpiece()
@@ -106,11 +108,21 @@ class Field {
 
         for(let row = 0 ; row < piece.length ; row++ ) {
             for(let col = 0 ; col < piece[row].length ; col++) {
-                newpiece[col][end - row] = piece[row][col];
+                const cell = piece[row][col]
+                newpiece[col][end - row] = cell;
+                if(cell === '#' && end - row + this.pieceObj.pos.col < 0)
+                    this.pieceObj.pos.col++;
+                else if(cell === '#' && end - row + this.pieceObj.pos.col > 9)
+                    this.pieceObj.pos.col--;
             }
         }
-
         this.pieceObj.cells = newpiece;
+
+        while(this.collision(this.pieceObj.pos)) {
+            this.pieceObj.pos.row--;
+        }
+
+
     }
 
 
@@ -232,20 +244,27 @@ class Field {
         let { pos } = this.pieceObj;
 
         if(pos.row === opos.row && pos.col === opos.col) {
-            if(!this.crystallize()) {
-                console.log("Game Over!");
-                clearInterval(this.interval);
+            if(!this.noInput) {
+                this.noInput = true;
             } else {
-                this.clearrows();
-            };
+                if(!this.crystallize()) {
+                    console.log("Game Over!");
+                    clearInterval(this.interval);
+                } else {
+                    this.clearrows();
+                };
+                this.noInput = false;
+            }
         }
         this.draw();
     }
+
     toString()
     {
         let flat = [];
         for(let row = 0 ; row < this.cells.length ; row++) {
             for(let col = 0 ; col < this.cells[row].length ; col++) {
+                flat.push(' ');
                 if(this.ispiece(row, col))
                     flat.push('#')
                 else
@@ -283,6 +302,8 @@ document.body.innerHTML = output;
 document.body.addEventListener("keydown", (ev) =>
 {
     let d : Cmd | undefined  = codeToDir[ev.code] as Cmd | undefined;
+
+    field.noInput = false;
     if(typeof d !== 'undefined') {
         if(d === 'rotate') {
             field.rotate();
