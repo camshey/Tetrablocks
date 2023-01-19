@@ -3,7 +3,7 @@
 document.body.innerHTML = "what"
 
 type Dir = 'left' | 'right' | 'up' | 'down';
-type Cmd = Dir | 'rotate' | 'swap';
+type Cmd = Dir | 'rotate' | 'swap' | 'drop';
 type MapCodeToDir = {
     [key: string] : Cmd
 }
@@ -17,7 +17,8 @@ const codeToDir : MapCodeToDir = {
     'KeyS' : 'down',
     'KeyA' : 'left',
     'KeyD' : 'right',
-    'KeyC' : 'swap'
+    'KeyC' : 'swap',
+    'Space' : 'drop'
 }
 
 const cellValue = [ '.', '@', '#', '*' ] as const;
@@ -157,6 +158,7 @@ class Field {
         this.noInput = false;
         this.swapped = false;
     }
+
 
     swap()
     {
@@ -306,6 +308,21 @@ class Field {
         }
         this.draw();
     }
+    
+    harddrop()
+    {
+        let opos = { row: -0.5, col: -0.5 };
+        let pos = this.piece.pos;
+
+        while(pos.row !== opos.row) {
+            opos = { ...pos };
+            this.move('down');
+        }
+        this.crystallize();
+        this.clearrows();
+        this.noInput = false;
+        this.draw();
+    }
 
     toString()
     {
@@ -357,6 +374,8 @@ document.body.addEventListener("keydown", (ev) =>
             field.piece.rotate();
         } else if(d === 'swap') {
             field.swap();
+        } else if(d === 'drop') {
+            field.harddrop();
         } else {
             field.move(d);
         }
