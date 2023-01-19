@@ -3,7 +3,7 @@
 document.body.innerHTML = "what"
 
 type Dir = 'left' | 'right' | 'up' | 'down';
-type Cmd = Dir | 'rotate';
+type Cmd = Dir | 'rotate' | 'swap';
 type MapCodeToDir = {
     [key: string] : Cmd
 }
@@ -16,7 +16,8 @@ const codeToDir : MapCodeToDir = {
     'KeyW' : 'rotate',
     'KeyS' : 'down',
     'KeyA' : 'left',
-    'KeyD' : 'right'
+    'KeyD' : 'right',
+    'KeyC' : 'swap'
 }
 
 const cellValue = [ '.', '@', '#', '*' ] as const;
@@ -72,16 +73,25 @@ class Piece {
     size : number;
     bottom : number;
     pos: Coord;
+    startpos: Coord;
 
     constructor()
     {
         const rnum = Math.floor(Math.random() * pieceTable.length);
+
         
         this.cells = pieceTable[rnum];
-        this.pos = { row: -3, col: 3 };
+        this.startpos = { row: -3, col: 3 };
         this.size = this.cells.length;
         this.bottom = this.cells.length - 1;
+        this.pos = { ...this.startpos };
 
+    }
+
+    reset()
+    {
+        this.pos.row = this.startpos.row;
+        this.pos.col = this.startpos.col;
     }
 
     rotate()
@@ -135,6 +145,7 @@ class Field {
     interval : any;
     deadrows : number;
     noInput : boolean;
+    swapped : boolean;
 
     constructor()
     {
@@ -144,6 +155,19 @@ class Field {
         this.nextPiece = new Piece();
         this.interval = setInterval(this.tick.bind(this), 250);
         this.noInput = false;
+        this.swapped = false;
+    }
+
+    swap()
+    {
+        if(!this.swapped) {
+            const tmp = this.piece;
+
+            this.piece = this.nextPiece;
+            this.nextPiece = tmp;
+            this.nextPiece.reset();
+            this.swapped = true;
+        }
     }
 
 
@@ -218,6 +242,7 @@ class Field {
         }
         this.piece = this.nextPiece;
         this.nextPiece = new Piece();
+        this.swapped = false;
 
         return true;
 
@@ -330,6 +355,8 @@ document.body.addEventListener("keydown", (ev) =>
     if(typeof d !== 'undefined') {
         if(d === 'rotate') {
             field.piece.rotate();
+        } else if(d === 'swap') {
+            field.swap();
         } else {
             field.move(d);
         }
