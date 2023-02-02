@@ -173,6 +173,26 @@ const display = {
         
     },
 
+    outline: function(piece : Piece, el : HTMLElement, row : number, col : number) 
+    {
+        const dirMap = [
+            { row: -1, col:  0, dir: 'borderTop' },
+            { row:  1, col:  0, dir: 'borderBottom' },
+            { row:  0, col: -1, dir: 'borderLeft' },
+            { row:  0, col:  1, dir: 'borderRight' }
+        ];
+        for(let dir of dirMap) {
+            if(typeof piece.cells[row + dir.row] === 'undefined' ||
+            piece.cells[row + dir.row][col + dir.col] !== '#') {
+                el.style;
+                // ^?
+                (el.style as any)[dir.dir] = '2px solid black';
+            } else {
+                (el.style as any)[dir.dir] = '';
+            }
+        }
+          
+    },
 
     draw: function(field : Field) 
     {
@@ -183,20 +203,36 @@ const display = {
         for(let row = 0 ; row < 4 ; row++) {
             for(let col = 0 ; col < 4 ; col++) {
                 let e = this.gridElements[row][col + 3];
+                //  ^?
 
                 if(typeof field.nextPiece.cells[row] !== 'undefined' &&
                 field.nextPiece.cells[row][col] === '#') {
                     e.style.backgroundColor = '#ff8888';
+                    this.outline(field.nextPiece, e, row, col);
                 } else {
                     e.style.backgroundColor = '#888888';
+                    for(let x of ['borderTop', 'borderLeft', 'borderRight', 'borderBottom']) {
+                        (e.style as any)[x] = '';
+                    }
                 }
             }
         }
 
         for(let row = 0 ; row < field.cells.length ; row++) {
             for(let col = 0 ; col < field.cells[row].length ; col++) {
-                const color = field.ispiece(row, col) ? "#f00" : field.cells[row][col] === '@' ? "#88f" : "#888";
+                const ispiece = field.ispiece(row, col);
+                const color = ispiece ? "#f00" : field.cells[row][col] === '@' ? "#88f" : "#888";
                 this.gridElements[row + 4][col].style.backgroundColor = color;
+                if(ispiece) {
+                    this.outline(field.piece, 
+                        this.gridElements[row + 4][col], 
+                        row - field.piece.pos.row, 
+                        col - field.piece.pos.col);
+                } else {
+                    for(let x of ['borderTop', 'borderLeft', 'borderRight', 'borderBottom']) {
+                        (this.gridElements[row + 4][col].style as any)[x] = '';
+                    }
+                }
             }
         }
 
