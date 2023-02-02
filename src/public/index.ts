@@ -1,5 +1,7 @@
 "use strict"
 
+import e from "express";
+
 document.body.innerHTML = "what"
 
 type Dir = 'left' | 'right' | 'up' | 'down';
@@ -139,6 +141,78 @@ class Piece {
     }
 }
 
+document.body.innerHTML = '<div><div></div><div></div></div>';
+
+
+const display = {
+    topTarget  : document.body.children[0] as HTMLElement,
+    textTarget : document.body.children[0].children[0] as HTMLElement,
+    gridTarget : document.body.children[0].children[1] as HTMLElement,
+    gridElements : [] as HTMLElement[][],
+    setup : function()
+    {
+        this.topTarget.style.display = 'flex';
+        this.textTarget.style.backgroundColor = "#aaffaa";
+        this.gridTarget.style.backgroundColor = "#aaaaff";
+
+        this.gridTarget.style.display = 'grid';
+        this.gridTarget.style.height = "25.5rem";
+        this.gridTarget.style.gridGap = "1px";
+        this.gridTarget.style.gridTemplateColumns = "1rem ".repeat(10);
+        for(let i = 0 ; i < 240 ; i++) {
+            let d = document.createElement('div');
+            if(typeof this.gridElements[Math.floor(i / 10)] === 'undefined') {
+                this.gridElements[Math.floor(i / 10)] = [];
+            }
+            this.gridElements[Math.floor(i / 10)][i % 10] = d;
+            d.style.height = "1em";
+            d.style.backgroundColor = i % 2 === 0 ? "#888" : "#aaa";
+            this.gridTarget.appendChild(d);
+
+        }
+        
+    },
+
+
+    draw: function(field : Field) 
+    {
+        let n = field.nextPiece.toString();
+        let f = field.toString();
+        this.textTarget.innerHTML = `<pre>${n}</pre><pre>${f}</pre>`;
+
+        for(let row = 0 ; row < 4 ; row++) {
+            for(let col = 0 ; col < 4 ; col++) {
+                let e = this.gridElements[row][col + 3];
+
+                if(typeof field.nextPiece.cells[row] !== 'undefined' &&
+                field.nextPiece.cells[row][col] === '#') {
+                    e.style.backgroundColor = '#ff8888';
+                } else {
+                    e.style.backgroundColor = '#888888';
+                }
+            }
+        }
+
+        for(let row = 0 ; row < field.cells.length ; row++) {
+            for(let col = 0 ; col < field.cells[row].length ; col++) {
+                const color = field.ispiece(row, col) ? "#f00" : field.cells[row][col] === '@' ? "#88f" : "#888";
+                this.gridElements[row + 4][col].style.backgroundColor = color;
+            }
+        }
+
+        console.log("drawing...")
+    }
+};
+
+{
+    let w = window as any;
+    w.display = display;
+}
+
+
+display.setup();
+
+
 class Field {
     cells : CellValue[][];
     piece! : Piece;
@@ -147,9 +221,11 @@ class Field {
     deadrows : number;
     noInput : boolean;
     swapped : boolean;
+    dummy: number;
 
     constructor()
     {
+        this.dummy = 42;
         this.cells = newfield();
         this.deadrows = 0;
         this.piece = new Piece();
@@ -228,6 +304,7 @@ class Field {
         let f = this.toString();
         document.body.innerHTML = `<pre>${n}</pre><pre>${f}</pre>`;
         console.log("drawing...")
+
     }
     crystallize()
     {
@@ -306,7 +383,7 @@ class Field {
                 this.noInput = false;
             }
         }
-        this.draw();
+        display.draw(this);
     }
     
     harddrop()
@@ -321,7 +398,7 @@ class Field {
         this.crystallize();
         this.clearrows();
         this.noInput = false;
-        this.draw();
+        display.draw(this);
     }
 
     toString()
@@ -362,7 +439,7 @@ let output = "<pre>no input</pre>";
 const inputs : string[] = [];
 const field = new Field();
 
-document.body.innerHTML = output;
+// document.body.innerHTML = output;
 
 document.body.addEventListener("keydown", (ev) =>
 {
@@ -380,7 +457,7 @@ document.body.addEventListener("keydown", (ev) =>
             field.move(d);
         }
     }
-    field.draw();
+    display.draw(field);
 } );
 
 const dirMap = {
