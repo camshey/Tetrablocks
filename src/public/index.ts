@@ -151,26 +151,58 @@ const display = {
     gridElements : [] as HTMLElement[][],
     setup : function()
     {
+
+        const cellSize = "1.5rem";
         this.topTarget.style.display = 'flex';
         this.textTarget.style.backgroundColor = "#aaffaa";
         this.gridTarget.style.backgroundColor = "#aaaaff";
 
         this.gridTarget.style.display = 'grid';
-        this.gridTarget.style.height = "25.5rem";
-        this.gridTarget.style.gridGap = "1px";
-        this.gridTarget.style.gridTemplateColumns = "1rem ".repeat(10);
+        this.gridTarget.style.height = "auto";
+        // this.gridTarget.style.gridGap = "1px";
+        this.gridTarget.style.gridTemplateColumns = `${cellSize} `.repeat(10);
         for(let i = 0 ; i < 240 ; i++) {
             let d = document.createElement('div');
             if(typeof this.gridElements[Math.floor(i / 10)] === 'undefined') {
                 this.gridElements[Math.floor(i / 10)] = [];
             }
             this.gridElements[Math.floor(i / 10)][i % 10] = d;
-            d.style.height = "1em";
+            d.style.height = cellSize;
             d.style.backgroundColor = i % 2 === 0 ? "#888" : "#aaa";
             this.gridTarget.appendChild(d);
 
         }
         
+    },
+    
+    dropoutline: function(row : number)
+    {
+        const rrow = row + 4;
+        this.gridElements[rrow].forEach((cur : HTMLElement, col : number) => {
+            const above = this.gridElements[rrow - 1][col];
+            
+            for(let edge of ['borderTop', 'borderLeft', 'borderRight', 'borderBottom']) {
+                (cur.style as any)[edge] = (above.style as any)[edge];
+            }
+    
+
+        });
+
+    },
+
+        
+    splitoutline: function(row : number)
+    {
+        const rrow = row + 4;
+
+        if(typeof this.gridElements[rrow - 1] !== 'undefined') {
+            this.gridElements[rrow - 1].forEach((cur : HTMLElement) => cur.style.borderBottom = '2px solid black');
+        }
+
+        if(typeof this.gridElements[rrow + 1] !== 'undefined') {
+            this.gridElements[rrow + 1].forEach((cur : HTMLElement) => cur.style.borderTop = '2px solid black');
+        }
+
     },
 
     outline: function(piece : Piece, el : HTMLElement, row : number, col : number) 
@@ -194,6 +226,15 @@ const display = {
           
     },
 
+    unoutline: function(el: HTMLElement)
+    {
+        for(let edge of ['borderTop', 'borderLeft', 'borderRight', 'borderBottom']) {
+            (el.style as any)[edge] = '';
+        }
+    },
+
+    
+
     draw: function(field : Field) 
     {
         let n = field.nextPiece.toString();
@@ -211,9 +252,7 @@ const display = {
                     this.outline(field.nextPiece, e, row, col);
                 } else {
                     e.style.backgroundColor = '#888888';
-                    for(let x of ['borderTop', 'borderLeft', 'borderRight', 'borderBottom']) {
-                        (e.style as any)[x] = '';
-                    }
+                    this.unoutline(e);
                 }
             }
         }
@@ -229,8 +268,8 @@ const display = {
                         row - field.piece.pos.row, 
                         col - field.piece.pos.col);
                 } else {
-                    for(let x of ['borderTop', 'borderLeft', 'borderRight', 'borderBottom']) {
-                        (this.gridElements[row + 4][col].style as any)[x] = '';
+                    if(field.cells[row][col] !== '@') {
+                        this.unoutline(this.gridElements[row + 4][col]);
                     }
                 }
             }
@@ -342,6 +381,7 @@ class Field {
         console.log("drawing...")
 
     }
+
     crystallize()
     {
         const { size, pos, cells } = this.piece;
@@ -365,9 +405,10 @@ class Field {
 
     clearrows()
     {
-        for(let row = field.cells.length - 1 ; row >=0 ; row--) {
+        for(let row = field.cells.length - 1 ; row >= 0 ; row--) {
             if(this.cells[row].filter( x => x === '@').length === this.cells[row].length) {
                 this.cells[row] = ''.padEnd(this.cells[row].length, '*').split('') as CellValue[];
+                display.splitoutline(row);
                 this.deadrows++;
             }
         }
@@ -391,6 +432,7 @@ class Field {
         console.log(`Collapse from ${from}`)
         for(let row = from ; row > 0 ; row--) {
             this.cells[row] = this.cells[row - 1];
+            display.dropoutline(row);
         }
         this.cells[0] = ''.padEnd(this.cells[1].length, '.').split('') as CellValue[];
     }
@@ -431,6 +473,7 @@ class Field {
             opos = { ...pos };
             this.move('down');
         }
+        display.draw(this);
         this.crystallize();
         this.clearrows();
         this.noInput = false;
