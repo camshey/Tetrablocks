@@ -27,6 +27,8 @@ const cellValue = [ '.', '@', '#', '*' ] as const;
 type CellValue = typeof cellValue[number];
 //   ^?
 
+const nullPiece : CellValue[][] = [];
+
 const pieceTable : CellValue[][][] = [
     [ 
         [ '.', '.', '.' ],
@@ -78,12 +80,15 @@ class Piece {
     pos: Coord;
     startpos: Coord;
 
-    constructor()
+    constructor(pieceName? : string)
     {
-        const rnum = Math.floor(Math.random() * pieceTable.length);
+        if(pieceName === 'null') {
+            this.cells = nullPiece;
+        } else {
+            const rnum = Math.floor(Math.random() * pieceTable.length);
+            this.cells = pieceTable[rnum];    
+        }
 
-        
-        this.cells = pieceTable[rnum];
         this.startpos = { row: -3, col: 3 };
         this.size = this.cells.length;
         this.bottom = this.cells.length - 1;
@@ -146,34 +151,52 @@ document.body.innerHTML = '<div><div></div><div></div></div>';
 
 const display = {
     topTarget  : document.body.children[0] as HTMLElement,
-    textTarget : document.body.children[0].children[0] as HTMLElement,
+    statusTarget : document.body.children[0].children[0] as HTMLElement,
+    heldTarget : document.createElement('div') as HTMLElement,
+    linesTarget : document.createElement('div') as HTMLElement,
     gridTarget : document.body.children[0].children[1] as HTMLElement,
     gridElements : [] as HTMLElement[][],
+    heldElements : [] as HTMLElement[][],
     setup : function()
     {
 
         const cellSize = "1.5rem";
         this.topTarget.style.display = 'flex';
-        this.textTarget.style.backgroundColor = "#aaffaa";
+        this.statusTarget.style.backgroundColor = "#aaffaa";
         this.gridTarget.style.backgroundColor = "#aaaaff";
 
         this.gridTarget.style.display = 'grid';
         this.gridTarget.style.height = "auto";
         // this.gridTarget.style.gridGap = "1px";
         this.gridTarget.style.gridTemplateColumns = `${cellSize} `.repeat(10);
-        for(let i = 0 ; i < 240 ; i++) {
-            let d = document.createElement('div');
-            if(typeof this.gridElements[Math.floor(i / 10)] === 'undefined') {
-                this.gridElements[Math.floor(i / 10)] = [];
-            }
-            this.gridElements[Math.floor(i / 10)][i % 10] = d;
-            d.style.height = cellSize;
-            d.style.backgroundColor = i % 2 === 0 ? "#888" : "#aaa";
-            this.gridTarget.appendChild(d);
 
+        const mkCell = (elements : HTMLElement[][], target : HTMLElement, count : number, width : number) => {
+            let d = document.createElement('div');
+            if(typeof elements[Math.floor(count / width)] === 'undefined') {
+                elements[Math.floor(count / width)] = [];
+            }
+            elements[Math.floor(count / width)][count % width] = d;
+            d.style.height = cellSize;
+            d.style.backgroundColor = count % 2 === 0 ? "#888" : "#aaa";
+            target.appendChild(d);
         }
-        
+
+        for(let i = 0 ; i < 240 ; i++) {
+            mkCell(this.gridElements, this.gridTarget, i, 10);
+        }
+
+        this.statusTarget.appendChild(this.linesTarget);
+        this.statusTarget.appendChild(this.heldTarget);
+        this.heldTarget.style.display = 'grid';
+        this.heldTarget.style.height = 'auto';
+        this.heldTarget.style.gridTemplateColumns = `${cellSize} `.repeat(4);
+        for(let i = 0 ; i < 16 ; i ++) {
+            mkCell(this.heldElements, this.heldTarget, i, 4);
+        }
+
+
     },
+
     
     dropoutline: function(row : number)
     {
@@ -239,7 +262,7 @@ const display = {
     {
         let n = field.nextPiece.toString();
         let f = field.toString();
-        this.textTarget.innerHTML = `<pre>${n}</pre><pre>${f}</pre>`;
+        
 
         for(let row = 0 ; row < 4 ; row++) {
             for(let col = 0 ; col < 4 ; col++) {
@@ -256,6 +279,24 @@ const display = {
                 }
             }
         }
+
+        for(let row = 0 ; row < 4 ; row++) {
+            for(let col = 0 ; col < 4 ; col++) {
+                let e = this.heldElements[row][col];
+                //  ^?
+
+                if(typeof field.heldPiece.cells[row] !== 'undefined' &&
+                field.heldPiece.cells[row][col] === '#') {
+                    e.style.backgroundColor = '#ff8888';
+                    this.outline(field.heldPiece, e, row, col);
+                } else {
+                    e.style.backgroundColor = '#888888';
+                    this.unoutline(e);
+                }
+            }
+        }
+
+
 
         for(let row = 0 ; row < field.cells.length ; row++) {
             for(let col = 0 ; col < field.cells[row].length ; col++) {
@@ -275,7 +316,8 @@ const display = {
             }
         }
 
-        console.log("drawing...")
+        this.linesTarget.innerHTML = "Lines cleared: " + field.linesCleared;
+
     }
 };
 
@@ -292,11 +334,13 @@ class Field {
     cells : CellValue[][];
     piece! : Piece;
     nextPiece : Piece;
+    heldPiece : Piece;
     interval : any;
     deadrows : number;
     noInput : boolean;
     swapped : boolean;
     dummy: number;
+    linesCleared: number;
 
     constructor()
     {
@@ -308,19 +352,30 @@ class Field {
         this.interval = setInterval(this.tick.bind(this), 250);
         this.noInput = false;
         this.swapped = false;
+        this.linesCleared = 0;
+        this.heldPiece = new Piece('null');
     }
 
 
     swap()
     {
-        if(!this.swapped) {
-            const tmp = this.piece;
-
-            this.piece = this.nextPiece;
-            this.nextPiece = tmp;
-            this.nextPiece.reset();
+        if(this.swapped) 
+            return;
+        else        
             this.swapped = true;
+
+        const tmp = this.piece;
+        
+        if(this.heldPiece.cells === nullPiece) {
+            console.log("Swap with nextPiece, generate new nextPiece");
+            this.piece = this.nextPiece;
+            this.nextPiece = new Piece();
+        } else {
+            console.log("Swap with held piece");
+            this.piece = this.heldPiece;
+            this.heldPiece.reset();
         }
+        this.heldPiece = tmp;
     }
 
 
@@ -373,14 +428,6 @@ class Field {
         return false;
     }
 
-    draw()
-    {
-        let n = this.nextPiece.toString();
-        let f = this.toString();
-        document.body.innerHTML = `<pre>${n}</pre><pre>${f}</pre>`;
-        console.log("drawing...")
-
-    }
 
     crystallize()
     {
@@ -410,6 +457,7 @@ class Field {
                 this.cells[row] = ''.padEnd(this.cells[row].length, '*').split('') as CellValue[];
                 display.splitoutline(row);
                 this.deadrows++;
+                this.linesCleared++;
             }
         }
 
@@ -502,9 +550,7 @@ class Field {
         row += dirMap[dir].row;
         col += dirMap[dir].col;
     
-        console.log(`move ${dir} : from ${this.piece.pos.row}, ${this.piece.pos.col} to ${row}, ${col}`);
         if(!this.collision({row: row, col: col})) {
-            console.log("move to", row, col);
             this.piece.pos.row = row;
             this.piece.pos.col = col;
         } else {
