@@ -2,3 +2,5 @@ package-lock.json
 node_modules
 dist/server
 dist/public/js
+src/public/index.js
+src/server/server.js
