@@ -17,13 +17,16 @@ class Field {
     piece! : Piece;
     nextPiece : Piece;
     heldPiece : Piece;
-    interval : any;
+    timer : any;
+    interval : number;
+    speed : number;
     deadrows : number;
     noInput : boolean;
     swapped : boolean;
     dummy: number;
     linesCleared: number;
     display: any;
+    lastInput: number;
 
     constructor(display : any)
     {
@@ -32,8 +35,11 @@ class Field {
         this.deadrows = 0;
         this.piece = new Piece();
         this.nextPiece = new Piece();
-        this.interval = setInterval(this.tick.bind(this), 250);
+        this.speed = 0; 
+        this.interval = 250;
+        this.timer = setInterval(this.tick.bind(this), this.interval);
         this.noInput = false;
+        this.lastInput = 0;
         this.swapped = false;
         this.linesCleared = 0;
         this.heldPiece = new Piece('null');
@@ -171,7 +177,14 @@ class Field {
 
     tick()
     {
-        
+        const ospeed = this.speed;
+        this.speed = Math.floor(this.linesCleared / 10);
+        if(ospeed !== this.speed) {
+            clearInterval(this.timer);
+            this.interval = Math.floor(this.interval * 0.8);
+            this.timer = setInterval(this.tick.bind(this), this.interval);
+        }
+
         this.removerows();
 
         let opos = { row: this.piece.pos.row, col: this.piece.pos.col };
@@ -183,14 +196,17 @@ class Field {
         if(pos.row === opos.row && pos.col === opos.col) {
             if(!this.noInput) {
                 this.noInput = true;
+                this.lastInput = (new Date()).getTime();
             } else {
-                if(!this.crystallize()) {
-                    console.log("Game Over!");
-                    clearInterval(this.interval);
-                } else {
-                    this.clearrows();
-                };
-                this.noInput = false;
+                if((new Date()).getTime() - this.lastInput > 1000) {
+                    if(!this.crystallize()) {
+                        console.log("Game Over!");
+                        clearInterval(this.timer);
+                    } else {
+                        this.clearrows();
+                    };
+                    this.noInput = false;
+                }
             }
         }
         this.display.draw(this);
@@ -209,6 +225,7 @@ class Field {
         this.crystallize();
         this.clearrows();
         this.noInput = false;
+        this.lastInput = (new Date()).getTime();
         this.display.draw(this);
     }
 

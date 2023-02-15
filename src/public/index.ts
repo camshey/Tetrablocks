@@ -179,7 +179,7 @@ const display = {
             }
         }
 
-        this.linesTarget.innerHTML = "Lines cleared: " + field.linesCleared;
+        this.linesTarget.innerHTML = `Lines cleared:<br>${field.linesCleared}<br>Speed:<br>${field.speed}`;
 
     }
 };
@@ -206,6 +206,7 @@ document.body.addEventListener("keydown", (ev) =>
     let d : Cmd | undefined  = codeToDir[ev.code] as Cmd | undefined;
 
     field.noInput = false;
+    field.lastInput = (new Date()).getTime();
     if(typeof d !== 'undefined') {
         if(d === 'rotate') {
             field.piece.rotate();
