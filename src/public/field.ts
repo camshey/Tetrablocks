@@ -254,6 +254,8 @@ class Field {
         if(!this.collision({row: row, col: col})) {
             this.piece.pos.row = row;
             this.piece.pos.col = col;
+            this.noInput = false;
+            this.lastInput = (new Date()).getTime();
         } else {
             console.log("abort move");
         }

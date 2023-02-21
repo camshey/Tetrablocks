@@ -205,8 +205,7 @@ document.body.addEventListener("keydown", (ev) =>
 {
     let d : Cmd | undefined  = codeToDir[ev.code] as Cmd | undefined;
 
-    field.noInput = false;
-    field.lastInput = (new Date()).getTime();
+
     if(typeof d !== 'undefined') {
         if(d === 'rotate') {
             field.piece.rotate();
