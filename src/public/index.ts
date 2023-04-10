@@ -5,12 +5,7 @@ import { setPieceField, CellValue, nullPiece, Piece } from "./piece.js";
 import { Dir, Cmd, MapCodeToDir, codeToDir } from "./dir.js";
 import { Field } from "./field.js";
 
-document.body.innerHTML = "what"
-
-
-
 document.body.innerHTML = '<div><div></div><div></div></div>';
-
 
 const display = {
     topTarget  : document.body.children[0] as HTMLElement,
@@ -20,6 +15,8 @@ const display = {
     gridTarget : document.body.children[0].children[1] as HTMLElement,
     gridElements : [] as HTMLElement[][],
     heldElements : [] as HTMLElement[][],
+    previewBgColor : "#88f",
+    previewPieceColor : "#f88",
     setup : function()
     {
 
@@ -40,7 +37,7 @@ const display = {
             }
             elements[Math.floor(count / width)][count % width] = d;
             d.style.height = cellSize;
-            d.style.backgroundColor = count % 2 === 0 ? "#888" : "#aaa";
+            d.style.backgroundColor = this.previewBgColor;
             target.appendChild(d);
         }
 
@@ -134,10 +131,10 @@ const display = {
 
                 if(typeof field.nextPiece.cells[row] !== 'undefined' &&
                 field.nextPiece.cells[row][col] === '#') {
-                    e.style.backgroundColor = '#ff8888';
+                    e.style.backgroundColor = this.previewPieceColor;
                     this.outline(field.nextPiece, e, row, col);
                 } else {
-                    e.style.backgroundColor = '#888888';
+                    e.style.backgroundColor = this.previewBgColor;
                     this.unoutline(e);
                 }
             }
