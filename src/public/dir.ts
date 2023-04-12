@@ -1,7 +1,7 @@
 "use strict"
 
 type Dir = 'left' | 'right' | 'up' | 'down';
-type Cmd = Dir | 'rotate' | 'swap' | 'drop';
+type Cmd = Dir | 'rotate' | 'swap' | 'drop' | 'pause';
 type MapCodeToDir = {
     [key: string] : Cmd
 }
@@ -16,7 +16,9 @@ const codeToDir : MapCodeToDir = {
     'KeyA' : 'left',
     'KeyD' : 'right',
     'KeyC' : 'swap',
-    'Space' : 'drop'
+    'Space' : 'drop',
+    'Escape' : 'pause',
+
 }
 
 const dirMap = {

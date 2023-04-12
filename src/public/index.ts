@@ -189,14 +189,8 @@ const display = {
 
 display.setup();
 
-
-
-let output = "<pre>no input</pre>";
-const inputs : string[] = [];
 const field = new Field(display);
 setPieceField(field);
-
-// document.body.innerHTML = output;
 
 document.body.addEventListener("keydown", (ev) =>
 {
@@ -210,6 +204,8 @@ document.body.addEventListener("keydown", (ev) =>
             field.swap();
         } else if(d === 'drop') {
             field.harddrop();
+        } else if(d === 'pause') {
+            field.pause();
         } else {
             field.move(d);
         }

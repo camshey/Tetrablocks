@@ -27,6 +27,7 @@ class Field {
     linesCleared: number;
     display: any;
     lastInput: number;
+    paused: boolean;
 
     constructor(display : any)
     {
@@ -44,8 +45,17 @@ class Field {
         this.linesCleared = 0;
         this.heldPiece = new Piece('null');
         this.display = display;
+        this.paused = false;
     }
 
+    pause()
+    {
+        this.paused = !this.paused;
+
+        if(!this.paused) {
+            this.timer = setInterval(this.tick.bind(this), this.interval);
+        }
+    }
 
     swap()
     {
@@ -177,7 +187,13 @@ class Field {
 
     tick()
     {
+        if(this.paused) {
+            clearInterval(this.timer);
+            return;
+        }
+
         const ospeed = this.speed;
+        
         this.speed = Math.floor(this.linesCleared / 10);
         if(ospeed !== this.speed) {
             clearInterval(this.timer);
