@@ -15,7 +15,7 @@ const display = {
     gridTarget : document.body.children[0].children[1] as HTMLElement,
     gridElements : [] as HTMLElement[][],
     heldElements : [] as HTMLElement[][],
-    previewBgColor : "#88f",
+    previewBgColor : "#448",
     previewPieceColor : "#f88",
     setup : function()
     {

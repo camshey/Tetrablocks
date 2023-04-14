@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node dist/server/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc --build",
+    "test": "echo \"Erbror: no test specified\" && exit 1"
   },
   "author": "Chris Amshey",
   "license": "UNLICENSED",
