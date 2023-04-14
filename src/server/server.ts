@@ -4,7 +4,7 @@ import express from 'express';
 import path from 'path';
 
 const app = express();
-const port = 80;
+const port = Number(process.env.PORT) || 80;
 
 app.get('/', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../public/index.html'));
